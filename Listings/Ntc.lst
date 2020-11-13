@@ -1,0 +1,207 @@
+C51 COMPILER V9.56.0.0   NTC                                                               11/13/2020 10:16:17 PAGE 1   
+
+
+C51 COMPILER V9.56.0.0, COMPILATION OF MODULE NTC
+OBJECT MODULE PLACED IN .\Objects\Ntc.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE Scr\Ntc.c OPTIMIZE(4,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\N
+                    -tc.lst) OBJECT(.\Objects\Ntc.obj)
+
+line level    source
+
+   1          /*********************************************************************************************************
+             -******
+   2          Subroutine:                                                                             温度控制
+   3          Description:                                                                                                                                                            
+   4          Input:                                                                                                  
+   5          Output:                                                                                         
+   6          **********************************************************************************************************
+             -*****/
+   7          #include <SN8F5702.h>
+   8          #include "Ntc.h"
+   9          #include "AD.h"
+  10          #include "App.h"
+  11          #include "InChk.h"      
+  12          #include "Sub.h"
+  13          #include "Tab.h"
+  14          
+  15          //-------------------------------------------------------------
+  16          //      NTC ram define
+  17          //-------------------------------------------------------------
+  18          bit F_Ntc_Updata;                                                                                               //采集完成NTC的AD值
+  19          idata uint16_t R_Ntc_AD;                                                                //保存每次采集到的AD值
+  20          
+  21          idata uint16_t R_NtcFf[8];                                                      //保存每次采集的AD值，用于滑动平均
+  22          idata uint8_t R_NtcFf_Wt;
+  23          
+  24          idata uint8_t R_Ntc_Debouce;                                            //检测等级消抖
+  25          
+  26          idata uint8_t R_Rt_Temp;                                                                //测试的温度数值
+  27          //idata uint8_t R_Rt_TempBuf;                                                   //临时存储显示测试的温度数值
+  28          //idata uint8_t RTm_Rt_Chat;                                                    //温度在1度跳动时4S变化一次
+  29          
+  30          idata uint8_t RTm_RtLevel_Chat;                                 //检测温度等级消抖
+  31          idata uint8_t RTm_RtLevel_Chat1;                                //检测温度等级消抖
+  32          
+  33          bit F_Ntc_Error;                                                                                                //温度异常标志
+  34          
+  35          //*********************************************************************************
+  36          //      温度程序
+  37          //*********************************************************************************
+  38          void Mn_Ntc(void)
+  39          {
+  40   1              uint8_t R_Class_CAG = 0;
+  41   1              
+  42   1              if(F_Ntc_Updata)
+  43   1              {
+  44   2                      F_Ntc_Updata = 0;
+  45   2                      
+  46   2                      R_AD_Data = R_Ntc_AD;   
+  47   2                      
+  48   2      //==检测实际温度值      
+  49   2                      R_Wk00 = BinChk_Rank(Temp_AD,135);      //实时检测当前温度      
+  50   2                      
+  51   2                      R_Rt_Temp = Temp_Num[R_Wk00];
+  52   2      
+C51 COMPILER V9.56.0.0   NTC                                                               11/13/2020 10:16:17 PAGE 2   
+
+  53   2      //==充电状态    
+  54   2                      if(F_Chg_Exist)                                                                 
+  55   2                      {                                                                                                                                               //充电状态
+  56   3                              if(O_Chg_DisChg_En == 1)//1关闭充电状态
+  57   3                              {                                                                                                                                       //充电关断
+  58   4                                      if((R_Rt_Temp >= 88) && (R_Rt_Temp <= 137))
+  59   4                                      {                                                                                                                               //5°~60°   +80    85°~140°
+  60   5                                              RTm_RtLevel_Chat++;
+  61   5                                              if(RTm_RtLevel_Chat >= 100)
+  62   5                                              {
+  63   6                                                      RTm_RtLevel_Chat = 0;
+  64   6                                                      O_Chg_DisChg_En = 0;    //重新启动充电  
+  65   6                                                      O_Chg_Half_En = 1;//半速充电                                            
+  66   6                                              }                                                                                                                                                       
+  67   5                                      }
+  68   4                                      else
+  69   4                                      {
+  70   5                                              RTm_RtLevel_Chat = 0;
+  71   5                                      }
+  72   4                              }
+  73   3                              else//2半充和全充
+  74   3                              {
+  75   4                                      if((R_Rt_Temp <= 85) || (R_Rt_Temp >= 140))//3温度异常小于5度和大于60度
+  76   4                                      {
+  77   5                                              RTm_RtLevel_Chat++;
+  78   5                                              if(RTm_RtLevel_Chat >= 100)
+  79   5                                              {
+  80   6                                                      O_Chg_Half_En = 1;                                      //关断半速充电                  
+  81   6                                                      O_Chg_DisChg_En = 1;                            //关断充电      
+  82   6                                              }                                                                               
+  83   5                                      }
+  84   4                                      else//4温度正常5~60度
+  85   4                                      {
+  86   5                                              RTm_RtLevel_Chat = 0;
+  87   5      
+  88   5                                              if(O_Chg_Half_En == 1)//半速充状态
+  89   5                                              {                                                                                                                       //半速充电开启
+  90   6                                                      if((R_Rt_Temp <= 122)&&(R_Rt_Temp >= 98))
+  91   6                                                      {                                                                                                               //15°   45°   +80    95   125
+  92   7                                                              RTm_RtLevel_Chat1++;
+  93   7                                                              if(RTm_RtLevel_Chat1 >= 100)
+  94   7                                                              {
+  95   8                                                                      RTm_RtLevel_Chat1 = 0;
+  96   8                                                                      O_Chg_Half_En = 0;              
+  97   8                                                                      O_Chg_DisChg_En = 0;                                                            
+  98   8                                                              }                                                                                                                       
+  99   7                                                      }
+ 100   6                                                      else
+ 101   6                                                      {
+ 102   7                                                              RTm_RtLevel_Chat1 = 0;
+ 103   7                                                      }
+ 104   6                                              }
+ 105   5                                              else//全速充状态
+ 106   5                                              {
+ 107   6                                                      //if(R_Rt_Temp >= 125)
+ 108   6                                                      if(((R_Rt_Temp >= 88)&&(R_Rt_Temp <= 95))||((R_Rt_Temp >= 125)&&(R_Rt_Temp <= 137)))
+ 109   6                                                      {       
+ 110   7                                                              RTm_RtLevel_Chat1++;
+ 111   7                                                              if(RTm_RtLevel_Chat1 >= 100)
+ 112   7                                                              {
+ 113   8                                                                      RTm_RtLevel_Chat1 = 0;
+ 114   8                                                                      O_Chg_Half_En = 1;              //开启半速充电
+C51 COMPILER V9.56.0.0   NTC                                                               11/13/2020 10:16:17 PAGE 3   
+
+ 115   8                                                                      O_Chg_DisChg_En = 0;                                                                            
+ 116   8                                                              }                                                                                                                                               
+ 117   7                                                      }
+ 118   6                                                      else
+ 119   6                                                      {
+ 120   7                                                              RTm_RtLevel_Chat1 = 0;
+ 121   7                                                      }
+ 122   6                                              }                                               
+ 123   5                                      }
+ 124   4                              }
+ 125   3                      }
+ 126   2                      else
+ 127   2                      {
+ 128   3      //====放电状态          
+ 129   3                              if(F_DisChg_Exist)                                                                      
+ 130   3                              {                                                                                                                                               //放电状态
+ 131   4                                      if(O_Chg_DisChg_En == 1)//关闭状态
+ 132   4                                      {                                                                                                                                       //放电关断
+ 133   5                                              if((R_Rt_Temp >= 78) && (R_Rt_Temp <= 137))                     
+ 134   5                                              {                                                                                                                               //-5°~60°   +80    75°~140°
+ 135   6                                                      RTm_RtLevel_Chat++;
+ 136   6                                                      if(RTm_RtLevel_Chat >= 100)
+ 137   6                                                      {
+ 138   7                                                              RTm_RtLevel_Chat = 0;
+ 139   7                                                              O_Chg_DisChg_En = 0;                            //重新启动放电  
+ 140   7                                                              O_Chg_Half_En    = 0;                                           
+ 141   7                                                      }                                                       
+ 142   6                                              }
+ 143   5                                              else
+ 144   5                                              {
+ 145   6                                                      RTm_RtLevel_Chat = 0;
+ 146   6                                              }
+ 147   5                                      }
+ 148   4                                      else//全速和半速 
+ 149   4                                      {
+ 150   5                                              if((R_Rt_Temp <= 75) || (R_Rt_Temp >= 140))
+ 151   5                                              {       
+ 152   6                                                      RTm_RtLevel_Chat++;
+ 153   6                                                      if(RTm_RtLevel_Chat >= 100)
+ 154   6                                                      {
+ 155   7                                                              RTm_RtLevel_Chat = 0;
+ 156   7                                                              O_Chg_DisChg_En = 1;                            //关断放电
+ 157   7                                                              O_Chg_Half_En    = 1;           
+ 158   7                                                      }                                               
+ 159   6                                              }
+ 160   5                                              else
+ 161   5                                              {
+ 162   6                                                      RTm_RtLevel_Chat = 0;
+ 163   6                                              }
+ 164   5                                      }
+ 165   4                              }                       
+ 166   3                      }
+ 167   2      //              R_Rt_TempBuf = Temp_Num[R_Wk00];
+ 168   2      
+ 169   2      //              if((R_Rt_TempBuf > (R_Rt_Temp + 1)) || (R_Rt_Temp > (R_Rt_TempBuf + 1)) || (RTm_Rt_Chat == 0))
+ 170   2      //              {       
+ 171   2      //                      R_Rt_Temp = R_Rt_TempBuf;                                       //温度在1度跳动时5S变化一次
+ 172   2      //                      RTm_Rt_Chat = LTm_Rt_Chat;
+ 173   2      //              }       
+ 174   2              }       
+ 175   1      }
+
+C51 COMPILER V9.56.0.0   NTC                                                               11/13/2020 10:16:17 PAGE 4   
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    288    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       1
+   IDATA SIZE       =     23    ----
+   BIT SIZE         =      2    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,152 @@
+A51 MACRO ASSEMBLER  OPTIONS_SN8F5702                                                     11/13/2020 10:16:18 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.5.0
+OBJECT MODULE PLACED IN .\Objects\OPTIONS_SN8F5702.obj
+ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE OPTIONS_SN8F5702.A51 SET(SMALL) DEBUG PRINT(.\Listings\OPTIONS_SN8F5702
+                      .lst) OBJECT(.\Objects\OPTIONS_SN8F5702.obj) EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     $nomod51 
+
+                       2     ;------------------------------------------------------------------------------
+
+                       3     ;
+
+                       4     ;  Copyright (c) 2015 SONiX Technology Co., Ltd.
+
+                       5     ;  Version 2.0 - SN8F5702, SN8F57021, SN8F57022, SN8F57023, SN8F57024
+
+                       6     ;  Version 2.1 - Add code option address for MP5
+
+                       7     ;  Version 2.2 - Remove LVD option
+
+                       8     ;  *** <<< Use Configuration Wizard in Context Menu >>> ***
+
+                       9     ;------------------------------------------------------------------------------
+
+                      10     ;
+
+                      11     ;  This preference, such as watchdog, external reset pin, and clock source, is preloaded 
+
+                      12     ;  during the microcontroller's power-on. It is strongly recommanded to use configuration 
+
+                      13     ;  wizard to set these parameters up appropriately.
+
+                      14     ;
+
+                      15     ;------------------------------------------------------------------------------
+
+  1000                16     ROM_SIZE                EQU             0x1000
+
+                      17     ;
+
+                      18     ;   <o> Program Memory Security <0x01=> Disable <0x00=> Enable
+
+  0000                19         SECURITY_SET    EQU     0x00                ;       {0x0FFF}
+
+                      20     ;   <i> The debug interface cannot read program memory if this security option is enable.
+
+                      21     ;   <i> Erase Full Chip can be proformmed to erase original code/data and unlock security.
+
+                      22     ;
+
+                      23     ;   <o.1..3> CPU Clock Source <0x07=> IHRC 32 MHz
+
+  000E                24         CLOCKSRC_SET    EQU     0x0E                ;       {0x0FFF}
+
+                      25     ;   <i> IHRC 32 MHz: on-chip internal clock with or without Timer 0 real time clock.
+
+                      26     ;
+
+                      27     ;   <h> Reset Sources
+
+                      28     ;       <o.4..5> External Reset / GPIO Shared Pin <0x00=> Reset with De-bounce <0x02=> Rese
+                             t without De-bounce <0x03=> GPIO
+
+  0030                29             RESETPIN_SET    EQU     0x30    ;       {0x0FFC}
+
+                      30     ;       <i> Reset with De-bounce: Triggers reset if this pin is pulled low over 4 ms.
+
+                      31     ;       <i> Reset without De-bounce: Triggers reset immediately if this pin is pulled low.
+
+                      32     ;       <i> GPIO: The shared pin is reserved for general purpose input/output.
+
+                      33     ;       <i> The de-bounce period is based on Internal Low R-C Clock which has a gentle inac
+                             curacy.
+
+                      34     ;
+
+                      35     ;       <o.4..7> Watchdog Reset <0x00=> Always <0x05=> Enable <0x0A=> Disable
+
+  00A0                36             WATCHDOG_SET    EQU     0xA0    ;       {0x0FFF}
+
+                      37     ;       <i> Always: Trun on watchdog function including Normal, IDLE, and SLEEP mode.
+
+                      38     ;       <i> Enable: Turn on watchdog function only in Normal mode.
+
+                      39     ;       <i> Disable: Turn off watchdog function.
+
+                      40     ;
+
+                      41     ;       <o.6..7> Watchdog Overflow Period <0x00=> 64 ms <0x01=> 128 ms <0x02=> 256 ms <0x03
+                             => 512 ms
+
+  00C0                42             WATCHCLK_SET    EQU     0xC0    ;       {0x0FFC}
+
+                      43     ;       <i> The watchdog overflow period is based on Internal Low R-C Clock which has a gen
+                             tle inaccuracy.
+
+                      44     ;   </h>
+
+                      45     
+
+                      46     
+
+----                  47         CSEG    AT      0x0FF6
+
+0FF6 FF               48         DB      0xFF
+
+0FF7 FF               49         DB      0xFF
+
+0FF8 FF               50         DB      0xFF
+
+0FF9 FF               51         DB      0xFF
+
+0FFA FF               52         DB      0xFF
+
+0FFB FF               53         DB      0xFF
+
+A51 MACRO ASSEMBLER  OPTIONS_SN8F5702                                                     11/13/2020 10:16:18 PAGE     2
+
+0FFC F6               54         DB      WATCHCLK_SET + RESETPIN_SET + 0x06
+
+0FFD 5A               55         DB      0x5A
+
+0FFE A5               56         DB      0xA5
+
+0FFF AE               57         DB      WATCHDOG_SET + CLOCKSRC_SET + SECURITY_SET
+
+                      58         END
+
+A51 MACRO ASSEMBLER  OPTIONS_SN8F5702                                                     11/13/2020 10:16:18 PAGE     3
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+CLOCKSRC_SET . . .  N NUMB   000EH   A   
+RESETPIN_SET . . .  N NUMB   0030H   A   
+ROM_SIZE . . . . .  N NUMB   1000H   A   
+SECURITY_SET . . .  N NUMB   0000H   A   
+WATCHCLK_SET . . .  N NUMB   00C0H   A   
+WATCHDOG_SET . . .  N NUMB   00A0H   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

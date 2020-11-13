@@ -1,0 +1,38 @@
+{
+    "configurations": [
+        {
+            "name": "SN8F5702",
+            "includePath": [
+                "c:\\Users\\weixing_zhao\\Desktop\\小电三代充电宝\\共享充电宝P3.5【小电】_20200730\\【傲信网络】\\PJE20043_【傲信网络】570213 共享移动电源程序V2.6_200709",
+                "c:\\Users\\weixing_zhao\\Desktop\\小电三代充电宝\\共享充电宝P3.5【小电】_20200730\\【傲信网络】\\PJE20043_【傲信网络】570213 共享移动电源程序V2.6_200709\\Scr"
+            ],
+            "defines": [
+                "__C51__",
+                "__VSCODE_C51__",
+                "reentrant=",
+                "compact=",
+                "small=",
+                "large=",
+                "data=",
+                "idata=",
+                "pdata=",
+                "bdata=",
+                "xdata=",
+                "code=",
+                "bit=char",
+                "sbit=char",
+                "sfr=char",
+                "sfr16=int",
+                "sfr32=int",
+                "interrupt=",
+                "using=",
+                "_at_=",
+                "_priority_=",
+                "_task_="
+            ],
+            "intelliSenseMode": "${default}",
+            "cStandard": "c99"
+        }
+    ],
+    "version": 4
+}

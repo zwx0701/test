@@ -1,0 +1,138 @@
+C51 COMPILER V9.56.0.0   DATA                                                              11/13/2020 10:16:17 PAGE 1   
+
+
+C51 COMPILER V9.56.0.0, COMPILATION OF MODULE DATA
+OBJECT MODULE PLACED IN .\Objects\Data.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE Scr\Data.c OPTIMIZE(4,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\
+                    -Data.lst) OBJECT(.\Objects\Data.obj)
+
+line level    source
+
+   1          /*********************************************************************************************************
+             -******
+   2          Subroutine:                                                                                                             通讯数据处理
+   3          Description:                                                                                                                                                            
+   4          Input:                                                                                                  
+   5          Output:                                                                                         
+   6          **********************************************************************************************************
+             -*****/
+   7          #include <SN8F5702.h>
+   8          #include "Data.h"               
+   9          #include "App.h"
+  10          #include "InChk.h"
+  11          #include "AD.h"
+  12          #include "Ntc.h"
+  13          #include "Sub.h"        
+  14          #include "UART.h"    
+  15          //-------------------------------------------------------------
+  16          //      Data ram define
+  17          //-------------------------------------------------------------
+  18          bit F_UartRx_En;                                                                                                                                //UART接收开始
+  19          idata uint8_t R_UartRx_Byte;                                                                            //统计接收的BYTE数
+  20          idata uint8_t R_Uart_RxBuf[L_Uart_RxBuf];                               //UART接收BUF
+  21          
+  22          bit F_UartTx_En;                                                                                                                                //UART发送开始
+  23          idata uint8_t R_UartTx_Byte;                                                                            //统计发送的BYTE数
+  24          idata uint8_t R_Uart_TxBuf[L_Uart_TxBuf];                               //UART发送BUF
+  25          
+  26          idata uint8_t  Temperture;//温度代号
+  27          idata uint16_t  BatValue;
+  28          //=============================================================
+  29          //      电平检测程序
+  30          //=============================================================
+  31          void Mn_Data(void)
+  32          {       
+  33   1              if(cRxTick ==20)//接收数据OK
+  34   1              {
+  35   2                      F_UartRx_En = 0;        
+  36   2                      if(R_UartRx_Byte >0)    
+  37   2                      {                                       
+  38   3                              if((R_Uart_RxBuf[0]  == 0X5E) && (R_Uart_RxBuf[1] == 0XA1))//查询充电宝状态
+  39   3                              {
+  40   4                                      P05 = 1;
+  41   4                                      Uart_Load_Data();                                                                                                       //加载UART_TXBUF数据
+  42   4                                      
+  43   4                                      if(O_Output_En == 1)//Bit4=0 软件锁关闭 Bit4=1 软件锁打开
+  44   4                                      {
+  45   5                                              R_Uart_TxBuf[8] |= 0x10;//软件锁打开                                            
+  46   5                                      }
+  47   4              //                      else
+  48   4              //                      {
+  49   4              //                              R_Uart_TxBuf[8] &= 0XEF;//软件锁关闭                                    
+  50   4              //                      }
+  51   4                                      R_Uart_TxBuf[10] = (R_Uart_TxBuf[0] + R_Uart_TxBuf[1] + R_Uart_TxBuf[2] + R_Uart_TxBuf[3] + R_Uart_TxB
+             -uf[4] +
+C51 COMPILER V9.56.0.0   DATA                                                              11/13/2020 10:16:17 PAGE 2   
+
+  52   4                                                                                                               R_Uart_TxBuf[5] + R_Uart_TxBuf[6] + R_Uart_TxBuf[7] + R_Uart_TxBuf[8] + R_Uart_TxBuf[9]);                      
+  53   4                                      RTm_Sys_Slp = 0;//不进入睡眠            
+  54   4                                      RTm_Delay_Slp = 0;      
+  55   4                                      UART_SendNByte();//Uart_Tx_Start(L1_Uart_TxBuf);                                                        //启动UART发送                                          
+  56   4                              }
+  57   3                              else if((R_Uart_RxBuf[0] == 0x7C) && (R_Uart_RxBuf[1] == 0X83))//关闭软件锁
+  58   3                              {       
+  59   4                                      P05 = 1;
+  60   4                                      Uart_Load_Data();                                                                                               //加载UART_TXBUF数据            
+  61   4                                      //R_Uart_TxBuf[8] &= 0XEF;//软件锁关闭  //Bit4=0 软件锁关闭 Bit4=1 软件锁打开                           
+  62   4                                      R_Uart_TxBuf[10] = (R_Uart_TxBuf[0] + R_Uart_TxBuf[1] + R_Uart_TxBuf[2] + R_Uart_TxBuf[3] + R_Uart_TxB
+             -uf[4] +
+  63   4                                                                                                               R_Uart_TxBuf[5] + R_Uart_TxBuf[6] + R_Uart_TxBuf[7] + R_Uart_TxBuf[8] + R_Uart_TxBuf[9]);
+  64   4                                      if(O_Output_En == 1)
+  65   4                                      {
+  66   5                                              O_Output_En = 0;                                                                                        //关输出
+  67   5                                              
+  68   5                                              Isp_WrRom();                                                                                                    //写Rom
+  69   5                                      }
+  70   4                                      RTm_Sys_Slp = 0;//不进入睡眠            
+  71   4                                      RTm_Delay_Slp = 0;                                      
+  72   4                                      UART_SendNByte();//Uart_Tx_Start(L_Uart_TxBuf);                                         //启动UART发送  
+  73   4                                      CloseKey();
+  74   4                              }
+  75   3                              else if((R_Uart_RxBuf[0] == 0X5C) && (R_Uart_RxBuf[1] == 0XA3))//打开软件锁
+  76   3                              {       
+  77   4                                      P05 = 1;
+  78   4                                      BatValue = (uint16_t)(R_Vbat_AD*0.732421875);//     R_Vbat_AD/4096*3*1000
+  79   4                                      Uart_Load_Data();                                                                                               //加载UART_TXBUF数据                    
+  80   4                                      R_Uart_TxBuf[8] |= 0x10;//软件锁打开 //Bit4=0 软件锁关闭 Bit4=1 软件锁打开                                                      
+  81   4                                      R_Uart_TxBuf[10] = (R_Uart_TxBuf[0] + R_Uart_TxBuf[1] + R_Uart_TxBuf[2] + R_Uart_TxBuf[3] + R_Uart_TxB
+             -uf[4] +
+  82   4                                                                                                               R_Uart_TxBuf[5] + R_Uart_TxBuf[6] + R_Uart_TxBuf[7] + R_Uart_TxBuf[8] + R_Uart_TxBuf[9]);                      
+  83   4                                      if(O_Output_En == 0)
+  84   4                                      {
+  85   5                                              O_Output_En = 1;                                                                                        //开输出
+  86   5                                              
+  87   5                                              Isp_WrRom();                                                                                                    //写Rom
+  88   5                                      }
+  89   4                                      RTm_Sys_Slp = 0;//不进入睡眠            
+  90   4                                      RTm_Delay_Slp = 0;                                      
+  91   4                                      UART_SendNByte();//Uart_Tx_Start(L_Uart_TxBuf);                                         //启动UART发送
+  92   4                                      MINKey();//唤醒IP5189                           
+  93   4                              }               
+  94   3                              else
+  95   3                              {
+  96   4                                      //Uart_TxM_IN;                          
+  97   4                                      if((F_Chg_Exist == 0) && (F_DisChg_Exist == 0))
+  98   4                                      {
+  99   5                                              RTm_Sys_Slp = LTm_Sys_Slp;                                                      //开始睡眠定时  
+ 100   5                                      }                       
+ 101   4                              }
+ 102   3                      }
+ 103   2                      R_UartRx_Byte = 0;                      
+ 104   2              }
+ 105   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    279    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+C51 COMPILER V9.56.0.0   DATA                                                              11/13/2020 10:16:17 PAGE 3   
+
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =     18    ----
+   BIT SIZE         =      2    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

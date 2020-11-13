@@ -1,0 +1,112 @@
+C51 COMPILER V9.56.0.0   INIT                                                              11/13/2020 10:16:17 PAGE 1   
+
+
+C51 COMPILER V9.56.0.0, COMPILATION OF MODULE INIT
+OBJECT MODULE PLACED IN .\Objects\Init.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE Scr\Init.c OPTIMIZE(4,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\
+                    -Init.lst) OBJECT(.\Objects\Init.obj)
+
+line level    source
+
+   1          /******************************************************************************
+   2          Subroutine:                                     初始化程序
+   3          Description:                    对IO口、功能模块和寄存器初始化处理
+   4          ******************************************************************************/
+   5          #include <SN8F5702.h>   
+   6          #include "Init.h"
+   7          #include "Data.h"       
+   8          #include "Sub.h"
+   9          
+  10          //-------------------------------------------------------------
+  11          //      Init ram define
+  12          //-------------------------------------------------------------
+  13          //====NONE
+  14          
+  15          //=============================================================
+  16          //      初始化程序
+  17          //=============================================================
+  18          void Init(void)
+  19          {       
+  20   1      //-----------------------------------
+  21   1      //      clock初始化
+  22   1      //-----------------------------------
+  23   1      //      CKCON = 0x31;                                                           //From = 32M/4
+  24   1      //      CLKSEL = 0x07;                                                  //Fcpu = 32M/1
+  25   1      //      CLKCMD = 0x69;                                                  //Clock switch start
+  26   1              CKCON = 0X70;   
+  27   1              CLKSEL = 0X07;//Fcpu = 32M/1 = 32M
+  28   1              CLKCMD = 0X69;  
+  29   1              CKCON = 0X30;//From = 8M                
+  30   1      //-----------------------------------
+  31   1      //      IO口初始化
+  32   1      //-----------------------------------
+  33   1              P0UR = 0X59;                                                            //P00为震动开关检测口 P02为输出使能口 
+  34   1              P0 = 0X00;                                                                      //P05为UART TX P06为UART RX
+  35   1              P0M = 0X26;                                                                     //P07为充电检测口 P01充电电流控制口1
+  36   1              
+  37   1              P1UR = 0XE2;                                                            //P10为打开5189T的开关 P13为AD口，检测温度
+  38   1              P1 = 0X01;                                                                      //P14为放电检测口 P12充电电流控制口2
+  39   1              P1M = 0X05;                     
+  40   1              P1W = 0x10;                                                                     //使能P14的唤醒功能     
+  41   1              
+  42   1              P2UR = 0XFE;
+  43   1              P2 = 0X00;
+  44   1              P2M =0X00;
+  45   1      //-----------------------------------
+  46   1      //      T2初始化 --------> 5ms
+  47   1      //-----------------------------------           
+  48   1              T2CON = 0x91;                                                           //Fclk = Fcpu/24
+  49   1                                                                                                      //AutoReload    
+  50   1              TH2 = 0xE5;
+  51   1              TL2 = 0xF5;                                                                     //计数6667次
+  52   1      
+  53   1              CRCH = 0xE5;
+  54   1              CRCL = 0xF5;                                                            //指定重装载值
+C51 COMPILER V9.56.0.0   INIT                                                              11/13/2020 10:16:17 PAGE 2   
+
+  55   1      
+  56   1              ET2 = 1;                                //Timer2 interrupt enable
+  57   1      //-----------------------------------
+  58   1      //      AD初始化
+  59   1      //-----------------------------------
+  60   1              ADR |= 0x40;                                                            // Enable AIN channel (GCHS)
+  61   1      
+  62   1              VREFH |= 0x00;                                                  // VHS[2] = 0 :  ADC internal VREFH function is depend on VHS[1:0]
+  63   1                                                                                                                              // VHS[1:0] = 00b : reference voltage is 2V.  
+  64   1                                                                                                                              
+  65   1                                                                                                                              // ADC internal reference high voltage select bits. 
+  66   1                                                                                                                              //==============================================
+  67   1                                                                                                                              //      VHS1 |  VHS0    |               Internal AVREFH Voltage
+  68   1                                                                                                                              //==============================================
+  69   1                                                                                                                              //              0                               0                                               2.0V (default)
+  70   1                                                                                                                              //              0                               1                                               3.0V
+  71   1                                                                                                                              //              1                               0                                               4.0V
+  72   1                                                                                                                              //              1                               1                                               VDD
+  73   1                                                                                                                              //==============================================
+  74   1              P1CON = 0x08;                                                   // P13 to be pure analog input pin
+  75   1              P2CON = 0x01;                                                   // P20 to be pure analog input pin
+  76   1              
+  77   1              ADM = 0x83;                                                                     // ADC enable (ADENB AIN3)
+  78   1      //-----------------------------------
+  79   1      //      读出Rolling Code(4BYTE  start address is 0x0FC0)
+  80   1      //-----------------------------------
+  81   1              Isp_RdRom();                                                            // 读出Rolling Code     
+  82   1      //-----------------------------------
+  83   1      //      开总中断
+  84   1      //-----------------------------------
+  85   1        EAL = 1;                                      //Golbal Interrupt enable               
+  86   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     75    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

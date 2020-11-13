@@ -1,0 +1,16 @@
+".\Objects\STARTUP.obj",
+".\Objects\Main.obj",
+".\Objects\Init.obj",
+".\Objects\IntGnd.obj",
+".\Objects\InChk.obj",
+".\Objects\App.obj",
+".\Objects\Data.obj",
+".\Objects\AD.obj",
+".\Objects\Ntc.obj",
+".\Objects\Sub.obj",
+".\Objects\Tab.obj",
+".\Objects\UART.obj",
+".\Objects\OPTIONS_SN8F5702.obj" 
+TO ".\Objects\Shared_Charger" 
+PRINT(".\Listings\Shared_Charger.m51") RAMSIZE(256) 
+CODE( 0X0000-0X0FF5 )
