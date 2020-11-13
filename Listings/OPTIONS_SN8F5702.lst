@@ -1,4 +1,4 @@
-A51 MACRO ASSEMBLER  OPTIONS_SN8F5702                                                     11/13/2020 10:16:18 PAGE     1
+A51 MACRO ASSEMBLER  OPTIONS_SN8F5702                                                     11/13/2020 17:52:30 PAGE     1
 
 
 MACRO ASSEMBLER A51 V8.2.5.0
@@ -118,7 +118,7 @@ LOC  OBJ            LINE     SOURCE
 
 0FFB FF               53         DB      0xFF
 
-A51 MACRO ASSEMBLER  OPTIONS_SN8F5702                                                     11/13/2020 10:16:18 PAGE     2
+A51 MACRO ASSEMBLER  OPTIONS_SN8F5702                                                     11/13/2020 17:52:30 PAGE     2
 
 0FFC F6               54         DB      WATCHCLK_SET + RESETPIN_SET + 0x06
 
@@ -130,7 +130,7 @@ LOC  OBJ            LINE     SOURCE
 
                       58         END
 
-A51 MACRO ASSEMBLER  OPTIONS_SN8F5702                                                     11/13/2020 10:16:18 PAGE     3
+A51 MACRO ASSEMBLER  OPTIONS_SN8F5702                                                     11/13/2020 17:52:30 PAGE     3
 
 SYMBOL TABLE LISTING
 ------ ----- -------

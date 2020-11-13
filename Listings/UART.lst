@@ -1,4 +1,4 @@
-C51 COMPILER V9.56.0.0   UART                                                              11/13/2020 10:16:18 PAGE 1   
+C51 COMPILER V9.56.0.0   UART                                                              11/13/2020 17:52:29 PAGE 1   
 
 
 C51 COMPILER V9.56.0.0, COMPILATION OF MODULE UART
@@ -62,7 +62,7 @@ line level    source
   52   2              }       
   53   1              if(temp_number & 0x01)//奇校验  //第9位,奇偶校验的值
   54   1                      TB80 = 0;
-C51 COMPILER V9.56.0.0   UART                                                              11/13/2020 10:16:18 PAGE 2   
+C51 COMPILER V9.56.0.0   UART                                                              11/13/2020 17:52:29 PAGE 2   
 
   55   1              else
   56   1                      TB80 = 1;       
@@ -126,7 +126,7 @@ line level    source
  114   2                      F_UartTx_En = 1;
  115   2                      UARTwriteonebyte(R_Uart_TxBuf[cTxPointer]);//发送数据
  116   2                      cTxPointer++;   
-C51 COMPILER V9.56.0.0   UART                                                              11/13/2020 10:16:18 PAGE 3   
+C51 COMPILER V9.56.0.0   UART                                                              11/13/2020 17:52:29 PAGE 3   
 
  117   2              }
  118   1              else

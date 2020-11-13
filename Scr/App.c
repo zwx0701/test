@@ -37,16 +37,7 @@ idata uint8_t RTm_30S_Cnt;
 //=============================================================
 void Mn_App(void)		
 {	
-	uint8_t loop,j;
-	if (j==0)
-	{
-		j++;
-	}
-	else
-	{
-		j--;
-	}
-	
+	uint8_t loop,j;	
 	if(F_Key_Push)														
 	{
 		F_Key_Push = 0;																//有按键按下

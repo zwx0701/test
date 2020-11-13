@@ -1,4 +1,4 @@
-C51 COMPILER V9.56.0.0   INIT                                                              11/13/2020 10:16:17 PAGE 1   
+C51 COMPILER V9.56.0.0   INIT                                                              11/13/2020 17:52:28 PAGE 1   
 
 
 C51 COMPILER V9.56.0.0, COMPILATION OF MODULE INIT
@@ -62,7 +62,7 @@ line level    source
   52   1      
   53   1              CRCH = 0xE5;
   54   1              CRCL = 0xF5;                                                            //指定重装载值
-C51 COMPILER V9.56.0.0   INIT                                                              11/13/2020 10:16:17 PAGE 2   
+C51 COMPILER V9.56.0.0   INIT                                                              11/13/2020 17:52:28 PAGE 2   
 
   55   1      
   56   1              ET2 = 1;                                //Timer2 interrupt enable

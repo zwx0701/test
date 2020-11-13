@@ -1,4 +1,4 @@
-C51 COMPILER V9.56.0.0   INTGND                                                            11/13/2020 10:16:17 PAGE 1   
+C51 COMPILER V9.56.0.0   INTGND                                                            11/13/2020 17:52:29 PAGE 1   
 
 
 C51 COMPILER V9.56.0.0, COMPILATION OF MODULE INTGND
@@ -62,7 +62,7 @@ line level    source
   51          * Function                : Tm_Sys_Slp
   52          * Description           : 系统睡眠定时  
   53          * Input                                 : RTm_Sys_Slp                             
-C51 COMPILER V9.56.0.0   INTGND                                                            11/13/2020 10:16:17 PAGE 2   
+C51 COMPILER V9.56.0.0   INTGND                                                            11/13/2020 17:52:29 PAGE 2   
 
   54          * Output                                : RTm_Sys_Slp
   55          ****************************************************************************/
@@ -126,7 +126,7 @@ line level    source
  113   4                                      F_Charge_Ok = 1;
  114   4      
  115   4                                      O_Chg_DisChg_En = 0;                                                            //开充电
-C51 COMPILER V9.56.0.0   INTGND                                                            11/13/2020 10:16:17 PAGE 3   
+C51 COMPILER V9.56.0.0   INTGND                                                            11/13/2020 17:52:29 PAGE 3   
 
  116   4                                      
  117   4                                      if(R_Rt_Temp <= 125)//全速充电
@@ -190,7 +190,7 @@ line level    source
  175          //                      F_UartRx_En = 0;                                                                                        //关UART接收
  176          //                      F_UartRx_Stop = 0;
  177          //                      R_UartRx_Bit = 8;                                                                                       //8bit不带校验位        
-C51 COMPILER V9.56.0.0   INTGND                                                            11/13/2020 10:16:17 PAGE 4   
+C51 COMPILER V9.56.0.0   INTGND                                                            11/13/2020 17:52:29 PAGE 4   
 
  178          //                      R_UartRx_Byte = 0;
  179          //              

@@ -1,4 +1,4 @@
-C51 COMPILER V9.56.0.0   DATA                                                              11/13/2020 10:16:17 PAGE 1   
+C51 COMPILER V9.56.0.0   DATA                                                              11/13/2020 17:52:29 PAGE 1   
 
 
 C51 COMPILER V9.56.0.0, COMPILATION OF MODULE DATA
@@ -62,7 +62,7 @@ line level    source
   50   4              //                      }
   51   4                                      R_Uart_TxBuf[10] = (R_Uart_TxBuf[0] + R_Uart_TxBuf[1] + R_Uart_TxBuf[2] + R_Uart_TxBuf[3] + R_Uart_TxB
              -uf[4] +
-C51 COMPILER V9.56.0.0   DATA                                                              11/13/2020 10:16:17 PAGE 2   
+C51 COMPILER V9.56.0.0   DATA                                                              11/13/2020 17:52:29 PAGE 2   
 
   52   4                                                                                                               R_Uart_TxBuf[5] + R_Uart_TxBuf[6] + R_Uart_TxBuf[7] + R_Uart_TxBuf[8] + R_Uart_TxBuf[9]);                      
   53   4                                      RTm_Sys_Slp = 0;//²»½øÈëË¯Ãß            
@@ -126,7 +126,7 @@ MODULE INFORMATION:   STATIC OVERLAYABLE
    CODE SIZE        =    279    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =   ----    ----
-C51 COMPILER V9.56.0.0   DATA                                                              11/13/2020 10:16:17 PAGE 3   
+C51 COMPILER V9.56.0.0   DATA                                                              11/13/2020 17:52:29 PAGE 3   
 
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----
