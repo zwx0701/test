@@ -1,0 +1,176 @@
+C51 COMPILER V9.56.0.0   UART                                                              11/13/2020 10:16:18 PAGE 1   
+
+
+C51 COMPILER V9.56.0.0, COMPILATION OF MODULE UART
+OBJECT MODULE PLACED IN .\Objects\UART.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE Scr\UART.C OPTIMIZE(4,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\
+                    -UART.lst) OBJECT(.\Objects\UART.obj)
+
+line level    source
+
+   1          #include "UART.h"                                                                       
+   2          #include "IntGnd.h"
+   3          #include "Data.h"       
+   4          #include "App.h"
+   5          #include "InChk.h"      
+   6          idata   uint8_t         cTxPointer;
+   7          idata   uint8_t cRxTick;
+   8          idata   uint8_t cTxClearCnt;
+   9          //*****************************************************************************
+  10          // Function                     : UART3init
+  11          // Description          : 
+  12          // Input                                        : None
+  13          // Output                               : None
+  14          // Return                               : None
+  15          // Note                                 : None
+  16          //*****************************************************************************
+  17          void UART3init(void)
+  18          {
+  19   1      //      P05 = 1;
+  20   1              P0M |= 0x20;//UTX初始化输出高           
+  21   1              P0M &= 0xbf;//URX初始化数模模式
+  22   1              
+  23   1              SM0 = 1;//模式3                                                                                                                                         
+  24   1              SM1 = 1;
+  25   1              REN0 = 1;                                                                                                                                                       
+  26   1      //  case L_BRUD_RATE_9600:
+  27   1              PCON &= 0x7f;                                                                                                           
+  28   1              BD = 1;                         
+  29   1              S0RELH = L_S0RELH_9600;
+  30   1              S0RELL = L_S0RELL_9600;                                                 
+  31   1              ES0 = 1;//使能UART中断
+  32   1      }
+  33          //*****************************************************************************
+  34          // Function                     : UARTwriteonebyte
+  35          // Description          : 
+  36          // Input                                        : None
+  37          // Output                               : None
+  38          // Return                               : None
+  39          // Note                                 : None
+  40          //*****************************************************************************
+  41          void UARTwriteonebyte(uint8_t r_txdata)
+  42          {
+  43   1              uint8_t i = 0;
+  44   1              uint8_t temp_check = 0;
+  45   1              uint8_t temp_number = 0;        
+  46   1              temp_check = r_txdata;  
+  47   1              for(i=0;i<8;i++)//判读发送数据‘1’的个数
+  48   1              {
+  49   2                      if(temp_check & 0x01)
+  50   2                              temp_number++;
+  51   2                      temp_check = _crol_(temp_check,1);//右位判断下一位数据是否为‘1’       
+  52   2              }       
+  53   1              if(temp_number & 0x01)//奇校验  //第9位,奇偶校验的值
+  54   1                      TB80 = 0;
+C51 COMPILER V9.56.0.0   UART                                                              11/13/2020 10:16:18 PAGE 2   
+
+  55   1              else
+  56   1                      TB80 = 1;       
+  57   1              S0BUF = r_txdata;
+  58   1      }
+  59          //*****************************************************************************
+  60          // Function                     : UARTISR
+  61          // Description          : 
+  62          // Input                                        : None
+  63          // Output                               : None
+  64          // Return                               : None
+  65          // Note                                 : None
+  66          //*****************************************************************************
+  67          void UARTISR(void) interrupt ISRUart 
+  68          {
+  69   1              uint8_t i = 0;
+  70   1              uint8_t temp_check = 0;
+  71   1              uint8_t temp_number = 0;
+  72   1              if(RI0 == 1)                                                            
+  73   1              {
+  74   2                      RI0 = 0;                                                                                                                
+  75   2                      temp_check = S0BUF;             
+  76   2                      for(i=0;i<8;i++)                                                                                                                        
+  77   2                      {
+  78   3                              if((temp_check & 0x01) == 1)
+  79   3                                      temp_number++;
+  80   3                              temp_check = _crol_(temp_check,1);
+  81   3                      }               
+  82   2                      if(RB80 == 1)                                                                                                                           
+  83   2                              temp_number++;          
+  84   2                      if(temp_number & 0x01)//奇校验
+  85   2                      {
+  86   3                              R_Uart_RxBuf[R_UartRx_Byte++] = temp_check;     
+  87   3                              cRxTick = 0;    
+  88   3                              F_UartRx_En = 1;        
+  89   3                              
+  90   3                              F_Key_Push = 0;                                                                                 
+  91   3                              R_Sys_Mode = 0;                                         
+  92   3                              RTm_Sys_Slp = 0; //不进入睡眠   
+  93   3                              RTm_Delay_Slp = 0;                              
+  94   3                      }                       
+  95   2              }
+  96   1              if(TI0)
+  97   1              {
+  98   2                      TI0 = 0;                
+  99   2                      UART_SendNByte();       
+ 100   2              }
+ 101   1      }
+ 102          //*****************************************************************************
+ 103          // Function                     : UART0_SendNByte
+ 104          // Description          : 
+ 105          // Input                                        : None
+ 106          // Output                               : None
+ 107          // Return                               : None
+ 108          // Note                                 : None
+ 109          //*****************************************************************************
+ 110          void UART_SendNByte(void)
+ 111          {       
+ 112   1              if(cTxPointer < L_Uart_TxBuf)
+ 113   1              {
+ 114   2                      F_UartTx_En = 1;
+ 115   2                      UARTwriteonebyte(R_Uart_TxBuf[cTxPointer]);//发送数据
+ 116   2                      cTxPointer++;   
+C51 COMPILER V9.56.0.0   UART                                                              11/13/2020 10:16:18 PAGE 3   
+
+ 117   2              }
+ 118   1              else
+ 119   1              {
+ 120   2                      //P05 = 0;
+ 121   2                      cTxClearCnt = 2;
+ 122   2                      cTxPointer = 0;
+ 123   2                      F_UartTx_En = 0;
+ 124   2                      if((F_Chg_Exist == 0) && (F_DisChg_Exist == 0))
+ 125   2                      {
+ 126   3                              RTm_Sys_Slp = LTm_Sys_Slp;                                                      //开始睡眠定时  
+ 127   3                      }                       
+ 128   2              }
+ 129   1      }
+ 130          //*****************************************************************************
+ 131          // Function                     : ClearUTXIO
+ 132          // Description          : 
+ 133          // Input                                        : None
+ 134          // Output                               : None
+ 135          // Return                               : None
+ 136          // Note                                 : None
+ 137          //*****************************************************************************
+ 138          void ClearUTXIO(void)
+ 139          {
+ 140   1              if(cTxClearCnt !=0)
+ 141   1              {
+ 142   2                      cTxClearCnt--;
+ 143   2                      if(cTxClearCnt == 0)
+ 144   2                      {
+ 145   3                              P05 = 0;
+ 146   3                      }       
+ 147   2              }
+ 148   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    270    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =      3    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

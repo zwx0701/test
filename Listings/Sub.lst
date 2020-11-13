@@ -1,0 +1,381 @@
+C51 COMPILER V9.56.0.0   SUB                                                               11/13/2020 10:16:17 PAGE 1   
+
+
+C51 COMPILER V9.56.0.0, COMPILATION OF MODULE SUB
+OBJECT MODULE PLACED IN .\Objects\Sub.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE Scr\Sub.c OPTIMIZE(4,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\S
+                    -ub.lst) OBJECT(.\Objects\Sub.obj)
+
+line level    source
+
+   1          /*********************************************************************************************************
+             -******
+   2          Subroutine:                                                                                                     各种子程序
+   3          Description:                                                                                                                                                                                                                            
+   4          Input:                                                                                                  
+   5          Output:                                                                                         
+   6          **********************************************************************************************************
+             -*****/
+   7          #include <SN8F5702.h>
+   8          #include "Sub.h"        
+   9          #include "App.h"
+  10          #include "InChk.h"
+  11          #include "Data.h"       
+  12          #include "AD.h"
+  13          #include "Ntc.h"
+  14          //-------------------------------------------------------------
+  15          //      Sub ram define
+  16          //-------------------------------------------------------------
+  17          idata uint8_t R_Wk00;                                                                                                   //临时存储等级
+  18          idata uint8_t R_Rolling_Code[4];                                                        //存储Rolling Code
+  19          idata uint8_t R_Rolling_CodeBuf[4];                                             //存储Rolling Code
+  20          
+  21          /****************************************************************************
+  22          * Function              : Get_AD
+  23          * Description   : 采集AD值
+  24          * Input                         : None                                                    
+  25          * Output                        : R_AD_Data
+  26          * Return                        : None
+  27          * Note                          : None
+  28          ****************************************************************************/
+  29          void Get_AD(void)
+  30          {       
+  31   1              idata uint8_t i;
+  32   1              idata uint16_t R_AD_Max = 0;
+  33   1              idata uint16_t R_AD_Min = 0xFFFF;
+  34   1              idata uint16_t R_AD_fifo;
+  35   1              R_AD_Data = 0;
+  36   1              for(i = 0; i < 18; i++)                         
+  37   1              {
+  38   2                      EnADC_Coverting;                                                                                                        //开始AD转换(32us)
+  39   2                      while(!_EOC);                                                                                                                   //等待AD转换完成
+  40   2                      ADM &= 0xDF;                                                                                                                    //清EOC
+  41   2                      R_AD_fifo = ADB;
+  42   2                      R_AD_fifo = (R_AD_fifo << 4);
+  43   2                      R_AD_fifo = (R_AD_fifo + (ADR & 0x0F));         //将转换完成的12bit数字量存入AD_fifo中
+  44   2                      R_AD_Data = (R_AD_Data + R_AD_fifo);
+  45   2                      if(R_AD_fifo < R_AD_Min)
+  46   2                      {
+  47   3                              R_AD_Min = R_AD_fifo; 
+  48   3                      }
+  49   2                      if(R_AD_fifo > R_AD_Max)
+  50   2                      {
+  51   3                              R_AD_Max = R_AD_fifo;
+  52   3                      }
+C51 COMPILER V9.56.0.0   SUB                                                               11/13/2020 10:16:17 PAGE 2   
+
+  53   2              }
+  54   1              R_AD_Data = (R_AD_Data - R_AD_Min);                                     //去极值求平均
+  55   1              R_AD_Data = (R_AD_Data - R_AD_Max);
+  56   1              R_AD_Data = (R_AD_Data >> 4);
+  57   1      }
+  58          /****************************************************************************
+  59          * Function              : WTAff
+  60          * Description   : 保存数据到buf
+  61          * Input                         : None                                                    
+  62          * Output                        : None
+  63          * Return                        : None
+  64          * Note                          : None
+  65          ****************************************************************************/
+  66          void WTAff(uint16_t *R_Ff,uint8_t *R_Ff_Wt,uint16_t R_Data)
+  67          {       
+  68   1              *R_Ff = R_Data; 
+  69   1      
+  70   1              (*R_Ff_Wt)++;
+  71   1              if(*R_Ff_Wt >= L_Array_Length)
+  72   1              {
+  73   2                      *R_Ff_Wt = 0;
+  74   2              }
+  75   1      }
+  76          /****************************************************************************
+  77          * Function              : AVERAGE
+  78          * Description   : 求滑动平均
+  79          * Input                         : None                                                    
+  80          * Output                        : None
+  81          * Return                        : None
+  82          * Note                          : None
+  83          ****************************************************************************/
+  84          uint16_t AVERAGE(uint16_t *R_Ff)
+  85          {       
+  86   1              uint8_t i;
+  87   1              uint16_t R_Data = 0;    
+  88   1              
+  89   1              for(i = 0; i < L_Array_Length; i++)                             
+  90   1              {
+  91   2                      R_Data += *R_Ff;        
+  92   2                      R_Ff++;                         
+  93   2              }
+  94   1              R_Data = (R_Data >> 3);
+  95   1              
+  96   1              return(R_Data);
+  97   1      }
+  98          /****************************************************************************
+  99          * Function              : BinChk_Rank
+ 100          * Description   : 折半法查表
+ 101          * Input                         : None                                                    
+ 102          * Output                        : None
+ 103          * Return                        : R_Wk00
+ 104          * Note                          : None
+ 105          ****************************************************************************/
+ 106          uint8_t BinChk_Rank(uint16_t code *Array,uint8_t Length)
+ 107          {       
+ 108   1              bit F_Chk_Rank = 1;
+ 109   1              uint8_t Low = 0,Mid,High = Length;
+ 110   1              
+ 111   1              while(F_Chk_Rank)
+ 112   1              {
+ 113   2                      Mid = ((Low + High) / 2);
+ 114   2                      if(R_AD_Data < *(Array + Mid))
+C51 COMPILER V9.56.0.0   SUB                                                               11/13/2020 10:16:17 PAGE 3   
+
+ 115   2                      {                       
+ 116   3                              if((R_AD_Data >= *(Array + Mid - 1)) || (Mid == 0))
+ 117   3                              {
+ 118   4                                      F_Chk_Rank = 0;                                                                                 
+ 119   4                              }
+ 120   3                              else
+ 121   3                              {
+ 122   4                                      High = Mid;     
+ 123   4                              }
+ 124   3                      }
+ 125   2                      else
+ 126   2                      {
+ 127   3                              if(Mid >= (Length - 1))
+ 128   3                              {
+ 129   4                                      Mid++;
+ 130   4                                      F_Chk_Rank = 0;                         
+ 131   4                              }
+ 132   3                              else
+ 133   3                              {
+ 134   4                                      Low = Mid;                              
+ 135   4                              }
+ 136   3                      }
+ 137   2              }
+ 138   1              return(Mid);
+ 139   1      }
+ 140          //****************************************************************************
+ 141          // Function             : Isp_RdRom
+ 142          // Description: 将ISP的数据读出       
+ 143          // Input                        : None                                                    
+ 144          // Output                       : None
+ 145          // Return                       : None
+ 146          // Note                         : None
+ 147          //****************************************************************************
+ 148          void Isp_RdRom(void)
+ 149          {
+ 150   1              uint8_t R_RomData;
+ 151   1              uint16_t RomAddr;
+ 152   1                                                                      
+ 153   1      //CBYTE[RomAddr] 等效于 ((uint8_t volatile code*)(0))[romaddr]
+ 154   1      //=================================
+ 155   1      //#define CBYTE ((unsigned char volatile code  *) 0)  需要在Sub.h里面加上这条语句
+ 156   1      //=================================     
+ 157   1      
+ 158   1              if((R_Rolling_Code[0] == R_Rolling_CodeBuf[0]) && (R_Rolling_Code[1] == R_Rolling_CodeBuf[1])
+ 159   1                      && (R_Rolling_Code[2] == R_Rolling_CodeBuf[2]) && (R_Rolling_Code[3] == R_Rolling_CodeBuf[3]))
+ 160   1              {
+ 161   2                      RomAddr = L_IspAddr1;
+ 162   2                      R_RomData = CBYTE[RomAddr];     
+ 163   2                      if(R_RomData == 0x55)
+ 164   2                      {
+ 165   3                              O_Output_En = 1;
+ 166   3      //                      F_Output_En = 1;
+ 167   3                      }
+ 168   2                      else if(R_RomData == 0xAA)
+ 169   2                      {
+ 170   3                              O_Output_En = 0;
+ 171   3      //                      F_Output_En = 1;
+ 172   3                      }
+ 173   2              }       
+ 174   1              
+ 175   1      //      RomAddr++;      
+ 176   1              RomAddr = L_IspAddr;
+C51 COMPILER V9.56.0.0   SUB                                                               11/13/2020 10:16:17 PAGE 4   
+
+ 177   1              R_RomData = CBYTE[RomAddr];     
+ 178   1              R_Rolling_Code[0] = R_RomData;                                                          
+ 179   1              
+ 180   1              RomAddr++;              
+ 181   1              R_RomData = CBYTE[RomAddr];     
+ 182   1              R_Rolling_Code[1] = R_RomData;  
+ 183   1              
+ 184   1              RomAddr++;                      
+ 185   1              R_RomData = CBYTE[RomAddr];     
+ 186   1              R_Rolling_Code[2] = R_RomData;  
+ 187   1              
+ 188   1              RomAddr++;              
+ 189   1              R_RomData = CBYTE[RomAddr];     
+ 190   1              R_Rolling_Code[3] = R_RomData;
+ 191   1              
+ 192   1              R_Rolling_CodeBuf[0] = R_Rolling_Code[0];
+ 193   1              R_Rolling_CodeBuf[1] = R_Rolling_Code[1];
+ 194   1              R_Rolling_CodeBuf[2] = R_Rolling_Code[2];
+ 195   1              R_Rolling_CodeBuf[3] = R_Rolling_Code[3];
+ 196   1      }
+ 197          //****************************************************************************
+ 198          // Function             : Isp_WrRom
+ 199          // Description: 将RAM中的数据ISP到ROM中  
+ 200          // Input                        : F_Sys_On、R_Work_Mode、R_Wind_Mode                              
+ 201          // Output                       : None
+ 202          // Return                       : None
+ 203          // Note                         : None
+ 204          //****************************************************************************
+ 205          void Isp_WrRom(void)
+ 206          {
+ 207   1              uint8_t DataBuf[5];
+ 208   1              
+ 209   1        // step 1 : Get data
+ 210   1      //      DataBuf[0] = R_Rolling_Code[0];                 
+ 211   1      //      DataBuf[1] = R_Rolling_Code[1];                                                                 //风速的档位
+ 212   1      //      
+ 213   1      //      DataBuf[2] = R_Rolling_Code[2];
+ 214   1      //      DataBuf[3] = R_Rolling_Code[3];                                                                 //保存设置的开机时间    
+ 215   1              
+ 216   1              if(O_Output_En == 1)
+ 217   1              {
+ 218   2                      DataBuf[0] = 0x55;
+ 219   2              }
+ 220   1              else
+ 221   1              {
+ 222   2                      DataBuf[0] = 0xAA;
+ 223   2              }
+ 224   1              
+ 225   1              // step 2 : Set RAM addr of data
+ 226   1              PERAM = DataBuf;
+ 227   1      
+ 228   1              // step 3 : Set ROM start addr (Range is 0x0000~0x03FF)
+ 229   1              PEROML &= 0x0F;
+ 230   1              PEROML |= (L_IspAddr1 & 0x00F0);
+ 231   1              PEROMH = (L_IspAddr1 >> 8);     
+ 232   1              
+ 233   1              // step 4 : Progarm one page (32 bytes)
+ 234   1              PEROML |= 0x0A; 
+ 235   1              PECMD = 0x5A;
+ 236   1      }
+ 237          //****************************************************************************
+ 238          // Function             : Uart_Tx_Start
+C51 COMPILER V9.56.0.0   SUB                                                               11/13/2020 10:16:17 PAGE 5   
+
+ 239          // Description: 启动UART发送
+ 240          // Input                        : None                            
+ 241          // Output                       : None
+ 242          //****************************************************************************
+ 243          //void Uart_Tx_Start(uint8_t Tx_Lenth)
+ 244          //{
+ 245          //      F_UartTx_En = 1;
+ 246          //      F_UartTx_Start = 1;
+ 247          //      F_UartTx_Stop = 0;
+ 248          //      F_UartTx_Over = 0;
+ 249          //      R_UartTx_Bit = 8;
+ 250          //      R_UartTx_Byte = 0;
+ 251          //      R_UartTx_Data = R_Uart_TxBuf[0];
+ 252          
+ 253          //      R_Uart_TxLen = Tx_Lenth;                                                                                                        //发送N byte数据
+ 254          //      
+ 255          //      RTm_Uart_Reset = 0;
+ 256          //      
+ 257          //      IEN0 &= 0xFE;                                                                                                                           //INT0 isr Disable (EX0)
+ 258          
+ 259          //      TL0 = LTm_Pluse_52us;                                                                                                                   //定时52us      
+ 260          //      TR0 = 1;                                                                                                                        //Enable T0 timer function 
+ 261          //      
+ 262          //      O_Uart_Tx = 0;
+ 263          ////    Uart_TxM_OUT;           
+ 264          
+ 265          //      RTm_Sys_Slp = 0;                                                                                                                                        //不进入睡眠            
+ 266          //      RTm_Delay_Slp = 0;      
+ 267          //}
+ 268          //****************************************************************************
+ 269          // Function             : Uart_Load_Data
+ 270          // Description: 装载UART发送的数据
+ 271          // Input                        : None                            
+ 272          // Output                       : None
+ 273          //****************************************************************************
+ 274          void Uart_Load_Data(void)
+ 275          {
+ 276   1      idata uint16_t  TempBAT;
+ 277   1      //====准备数据 1BYTE“导码” + 1BYTE“P” + 1BYTE“04” + 4BYTE“Rolling Code” + 2BYTE“电池电压的AD值” 
+             -+ 1BYTE“充电宝状态” + 1BYTE“Check Sum”
+ 278   1              R_Uart_TxBuf[0] = ~R_Uart_RxBuf[0];//命令的反码
+ 279   1              R_Uart_TxBuf[1] = 0x00;//Bit7---bit4=客户代码 Bit3---bit0=充电宝代数                                                                                                            //"P"的ASCII码
+ 280   1              R_Uart_TxBuf[2] = 0X00;//Bit7---bit4=工厂序号 Bit3---bit0=方案代号                                                                                                                      //"05"  
+ 281   1              if((R_Rolling_Code[0] != R_Rolling_CodeBuf[0]) || (R_Rolling_Code[1] != R_Rolling_CodeBuf[1])
+ 282   1                      || (R_Rolling_Code[2] != R_Rolling_CodeBuf[2]) || (R_Rolling_Code[3] != R_Rolling_CodeBuf[3]))
+ 283   1              {
+ 284   2                      Isp_RdRom();                                                                                                                                            // 读出Rolling Code     
+ 285   2              }       
+ 286   1              R_Uart_TxBuf[3] = 0;
+ 287   1              R_Uart_TxBuf[4] = 0;
+ 288   1              R_Uart_TxBuf[5] = 0;
+ 289   1              R_Uart_TxBuf[6] = 0;
+ 290   1              R_Uart_TxBuf[3] |= ((R_Rolling_Code[2]>>4)|(R_Rolling_Code[3]<<4));//高位
+ 291   1              R_Uart_TxBuf[4] |= ((R_Rolling_Code[1]>>4)|(R_Rolling_Code[2]<<4));
+ 292   1              R_Uart_TxBuf[5] |= ((R_Rolling_Code[0]>>4)|(R_Rolling_Code[1]<<4));
+ 293   1              R_Uart_TxBuf[6] |= (R_Rolling_Code[0]<<4); //Bit3---bit0=预留，默认发0000 // Bit7---bit4=Bat_id0Rolling c
+             -ode 低位                                                
+ 294   1              R_Uart_TxBuf[7] = 0;//Bit3---bit0=预留，默认发0000 
+ 295   1              if(R_Rt_Temp<=75)//+80
+ 296   1                      Temperture = 0;
+ 297   1              else if((R_Rt_Temp>75)&&(R_Rt_Temp<=85))
+ 298   1                      Temperture = 1;
+C51 COMPILER V9.56.0.0   SUB                                                               11/13/2020 10:16:17 PAGE 6   
+
+ 299   1              else if((R_Rt_Temp>85)&&(R_Rt_Temp<=95))
+ 300   1                      Temperture = 2;
+ 301   1              else if((R_Rt_Temp>95)&&(R_Rt_Temp<=125))
+ 302   1                      Temperture = 3; 
+ 303   1              else if((R_Rt_Temp>125)&&(R_Rt_Temp<140))
+ 304   1                      Temperture = 4; 
+ 305   1              else if(R_Rt_Temp>=140)
+ 306   1                      Temperture = 5; 
+ 307   1              if((R_Ntc_AD>4000)||(R_Ntc_AD<100))
+ 308   1                      Temperture = 3; 
+ 309   1      
+ 310   1              R_Uart_TxBuf[7] |= (Temperture<<4);//Bit7---bit4=温度上报   
+ 311   1              
+ 312   1              R_Uart_TxBuf[8] = 0;
+ 313   1                      
+ 314   1              if(F_Chg_Exist==0)R_Uart_TxBuf[8] |= 0X80;//Bit7=0 充电OK       Bit7=1 不充电                           
+ 315   1                                                      //Bit6=0 无拆机         Bit6=1 有拆机   
+ 316   1              //if(F_DisChg_Exist==0)R_Uart_TxBuf[8] |= 0X20;//Bit5=0 放电OK          Bit5=1 不放电OK                                                                         
+ 317   1              TempBAT = (uint16_t)(R_Vbat_AD*0.732421875);//     R_Vbat_AD/4096*3*1000 实际电压值(毫伏)除以二
+ 318   1              
+ 319   1              if((BatValue >TempBAT)&&(BatValue - TempBAT)>50)//有0.1V压降
+ 320   1              {
+ 321   2                      R_Uart_TxBuf[8] &= 0XDF;//Bit5=0 放电OK
+ 322   2              }
+ 323   1              else
+ 324   1              {
+ 325   2                      R_Uart_TxBuf[8] |= 0X20;//Bit5=1 不放电OK
+ 326   2              }
+ 327   1                      
+ 328   1              R_Uart_TxBuf[8] |= ((TempBAT & 0x0F00) >> 8);//Bit3---bit0=上报电芯电压高位                                                             
+ 329   1              R_Uart_TxBuf[9] = (TempBAT & 0x00FF);//上报电芯电压低位 
+ 330   1      
+ 331   1      }
+ 332          //-----------------------------------------------------------------
+ 333          // Function             : Delay_5us
+ 334          // Description: 延时5us
+ 335          //-----------------------------------------------------------------
+ 336          void Delay_5us(void)
+ 337          {
+ 338   1              uint8_t k;
+ 339   1              for(k = 0; k < 10; k++)                                                                                                         //等待5us
+ 340   1              {
+ 341   2                      
+ 342   2              }       
+ 343   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    937    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      18
+   IDATA SIZE       =      9       9
+   BIT SIZE         =   ----       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

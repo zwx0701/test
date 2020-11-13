@@ -1,0 +1,235 @@
+C51 COMPILER V9.56.0.0   APP                                                               11/13/2020 10:16:17 PAGE 1   
+
+
+C51 COMPILER V9.56.0.0, COMPILATION OF MODULE APP
+OBJECT MODULE PLACED IN .\Objects\App.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE Scr\App.c OPTIMIZE(4,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\A
+                    -pp.lst) OBJECT(.\Objects\App.obj)
+
+line level    source
+
+   1          /*********************************************************************************************************
+             -******
+   2          Subroutine:                                                                                                                     应用程序
+   3          Description:                                                                                                                                                                                                                            
+   4          Input:                                                                                                  
+   5          Output:                                                                                         
+   6          **********************************************************************************************************
+             -*****/
+   7          #include <SN8F5702.h>
+   8          #include "App.h"
+   9          #include "InChk.h"
+  10          #include "Data.h"
+  11          #include "Sub.h"
+  12          
+  13          //-------------------------------------------------------------
+  14          //      app ram define
+  15          //-------------------------------------------------------------
+  16          bit F_Key_Push;
+  17          idata uint8_t R_Sys_Mode;                                                                                                       //系统工作模式
+  18          //idata uint8_t RTm_Sys_Slp = LTm_Sys_Slp;                                      //系统进入睡眠定时
+  19          idata uint8_t RTm_Sys_Slp;                                                                                              //系统进入睡眠定时
+  20          idata uint16_t RTm_Delay_Slp;                                                                                   //MCU延时进入睡眠
+  21          bit F_Charge_Ok;                                                                                                                                        //充电OK标志
+  22          idata uint8_t RTm_Key;                                                                                                          //短按键计数
+  23          bit F_Min;//一分半标志  
+  24          idata uint8_t RTm_1S;
+  25          idata uint8_t RTm_30S;
+  26          idata uint8_t RTm_30S_Cnt;
+  27          //=============================================================
+  28          //      应用程序
+  29          /*
+  30          睡眠触发事件：
+  31          1、数据应答完成     1.25S后睡眠
+  32          2、放电结束         10S+1.25S后睡眠
+  33          3、拔掉充电         1.25S后睡眠
+  34          4、接收数据错误                 1.25S后睡眠
+  35          5、睡眠误唤醒                           1.25S后睡眠
+  36          */
+  37          //=============================================================
+  38          void Mn_App(void)               
+  39          {       
+  40   1              uint8_t loop,j;
+  41   1              if (j==0)
+  42   1              {
+  43   2                      j++;
+  44   2              }
+  45   1              else
+  46   1              {
+  47   2                      j--;
+  48   2              }
+  49   1              
+  50   1              if(F_Key_Push)                                                                                                          
+  51   1              {
+  52   2                      F_Key_Push = 0;                                                                                                                         //有按键按下
+C51 COMPILER V9.56.0.0   APP                                                               11/13/2020 10:16:17 PAGE 2   
+
+  53   2                      if(R_Sys_Mode == 1)                                                                                                                     
+  54   2                      {                                                                                                                                                                                       //进入睡眠
+  55   3                              //if(((P0 & 0x07) == 0x05) && (F_UartRx_En == 0) && (F_UartTx_En == 0))                                 
+  56   3                              if((I_Chk_DisChg ==0) &&(I_SW1 ==1) &&(I_Chk_Chg ==0) && (F_UartRx_En == 0) && (F_UartTx_En == 0))      
+  57   3                              {                                                                                                                                                                               //判断未上锁，充电线拔掉且UART接收和发射完成
+  58   4                                      O_Chg_DisChg_En = 0;                                                                                    //开充电                        
+  59   4                                      O_Chg_Half_En = 0;                                                                                              //关半速充电                                    
+  60   4                                      ADM = 0;                                                                                                                                        //关AD  
+  61   4                                      P05 = 0;
+  62   4                                      REN0=0;                         
+  63   4                                      Goto_Sleep:             
+  64   4      //                                      Uart_TxM_IN;                                    
+  65   4                                      STOP(); 
+  66   4                                      REN0=1;                         
+  67   4                                      //P05 = 1;
+  68   4                                      Delay_5us();                                                                                                                    //延时5us等待电平稳定   
+  69   4                                      //Goto_Sleep10:                                                 
+  70   4                                      if(I_Uart_Rx)                                                                                                   
+  71   4                                      {                                                                                                                                                                       //非通讯口唤醒
+  72   5                                              j = ReadIO();
+  73   5                                              if(j != 0X00)
+  74   5                                              {
+  75   6                                                      loop=10;
+  76   6                                                      while((j == ReadIO())&&((--loop) != 0));        
+  77   6                                                      if(0 != loop)
+  78   6                                                      {
+  79   7                                                              goto Goto_Sleep;                                                                //干扰唤醒，继续进入睡眠
+  80   7                                                      }
+  81   6                                                      else//充电口和放电口唤醒
+  82   6                                                      {
+  83   7                                                              if(O_Output_En)//软件锁打开了
+  84   7                                                              {
+  85   8                                                                      MINKey();//唤醒IP5189   
+  86   8                                                              }                                                               
+  87   7                                                      }
+  88   6                                              }
+  89   5                                              else//抖动开关唤醒
+  90   5                                              {
+  91   6                                                      if(O_Output_En)//软件锁打开了
+  92   6                                                      {
+  93   7                                                              MINKey();//唤醒IP5189           
+  94   7                                                      }                                                       
+  95   6                                              }                                               
+  96   5                                      }       
+  97   4                                      else//UART唤醒
+  98   4                                      {
+  99   5      //                                      if(O_Output_En)//软件锁打开了
+ 100   5      //                                      {
+ 101   5      //                                              MINKey();//唤醒IP5189   
+ 102   5      //                                      }                                               
+ 103   5                                      }       
+ 104   4                                      ADM = 0x83;                                                                                                                             //ADC enable (ADENB AIN3)
+ 105   4                              }
+ 106   3                              R_Sys_Mode = 0; 
+ 107   3                              RTm_Sys_Slp = LTm_Sys_Slp;                                                                      //重新开始睡眠定时              
+ 108   3                      }       
+ 109   2              }
+ 110   1      }
+ 111          //*****************************************************************************
+ 112          // Function                     : ReadIO
+ 113          // Description          : 
+ 114          // Input                                        : None
+C51 COMPILER V9.56.0.0   APP                                                               11/13/2020 10:16:17 PAGE 3   
+
+ 115          // Output                               : None
+ 116          // Return                               : None
+ 117          // Note                                 : None
+ 118          //*****************************************************************************
+ 119          uint8_t ReadIO(void)
+ 120          {
+ 121   1              idata uint8_t Wake=0;   
+ 122   1              Wake |= P0&0X80;//  P07
+ 123   1              Wake |= P1&0X10;//P14
+ 124   1              return Wake;
+ 125   1      }
+ 126          //*****************************************************************************
+ 127          // Function                     : ShortKey
+ 128          // Description          : 
+ 129          // Input                                        : None
+ 130          // Output                               : None
+ 131          // Return                               : None
+ 132          // Note                                 : None
+ 133          //*****************************************************************************
+ 134          //void ShortKey(void)
+ 135          //{
+ 136          //      O_KEY = 0;
+ 137          //      RTm_Key = LTm_KEY;//200MS
+ 138          //}
+ 139          //*****************************************************************************
+ 140          // Function                     : MINKey
+ 141          // Description          : 三次按键
+ 142          // Input                                        : None
+ 143          // Output                               : None
+ 144          // Return                               : None
+ 145          // Note                                 : None
+ 146          //*****************************************************************************
+ 147          void MINKey(void)
+ 148          {
+ 149   1              if(F_Min !=0)//先关
+ 150   1              {
+ 151   2                      F_Min = 0;
+ 152   2                      RTm_30S_Cnt = 0;
+ 153   2                      O_KEY = 1;      
+ 154   2                      RTm_Key = 0;
+ 155   2                      RTm_30S = 0;
+ 156   2                      RTm_1S = 0;                     
+ 157   2              }       
+ 158   1              O_KEY = 0;
+ 159   1              RTm_Key = LTm_KEY;//200MS
+ 160   1              F_Min = 1;
+ 161   1              RTm_30S = 0;
+ 162   1              RTm_30S_Cnt = 0;  
+ 163   1              RTm_1S = 0;     
+ 164   1      }
+ 165          void CloseKey(void)
+ 166          {
+ 167   1              if(F_Min !=0)
+ 168   1              {
+ 169   2                      F_Min = 0;
+ 170   2                      RTm_30S_Cnt = 0;
+ 171   2                      O_KEY = 1;      
+ 172   2                      RTm_Key = 0;
+ 173   2                      RTm_30S = 0;
+ 174   2                      RTm_1S = 0;             
+ 175   2              }
+ 176   1      }
+C51 COMPILER V9.56.0.0   APP                                                               11/13/2020 10:16:17 PAGE 4   
+
+ 177          void MINKey_Intgnd(void)
+ 178          {
+ 179   1              if(F_Min == 1)
+ 180   1              {
+ 181   2                      RTm_1S++;
+ 182   2                      if(RTm_1S >=200)
+ 183   2                      {
+ 184   3                              RTm_1S = 0;
+ 185   3                              RTm_30S++;
+ 186   3                              if(RTm_30S>=23)
+ 187   3                              {
+ 188   4                                      RTm_30S = 0;
+ 189   4                                      RTm_30S_Cnt++;
+ 190   4                                      if(RTm_30S_Cnt >=1)
+ 191   4                                      {
+ 192   5                                              RTm_30S_Cnt = 0;
+ 193   5                                              F_Min = 0;
+ 194   5                                      }
+ 195   4                                      else
+ 196   4                                      {
+ 197   5                                              O_KEY = 0;
+ 198   5                                              RTm_Key = LTm_KEY;//200MS                               
+ 199   5                                      }
+ 200   4                              }                       
+ 201   3                      }
+ 202   2              }
+ 203   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    246    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       2
+   IDATA SIZE       =      8       1
+   BIT SIZE         =      3    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
